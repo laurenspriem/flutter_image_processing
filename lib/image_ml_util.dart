@@ -144,8 +144,7 @@ Color _readPixelColor(
   int y,
 ) {
   if (x < 0 || x >= image.width || y < 0 || y >= image.height) {
-    // throw ArgumentError('Invalid pixel coordinates.');
-    if (y != -1) {
+    if (y < -2 || y >= image.height + 2 || x < -2 || x >= image.width + 2) {
       log('[WARNING] `readPixelColor`: Invalid pixel coordinates, out of bounds');
     }
     return const Color.fromARGB(0, 0, 0, 0);
