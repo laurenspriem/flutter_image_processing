@@ -86,6 +86,15 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _greenifyImage() async {
+    if (imageOriginalData == null) return;
+
+    imageProcessedData = await processGreenifyImage(imageOriginalData!);
+    setState(() {
+      imageProcessed = Image.memory(imageProcessedData!);
+    });
+  }
+
   void _cleanResult() {
     setState(() {
       imageProcessed = null;
@@ -187,8 +196,8 @@ class _HomePageState extends State<HomePage> {
             imageProcessed == null
                 ? ElevatedButton.icon(
                     icon: const Icon(Icons.image_sharp),
-                    label: const Text('Downscale image'),
-                    onPressed: _resizeImage,
+                    label: const Text('Greenify image'),
+                    onPressed: _greenifyImage,
                   )
                 : const SizedBox.shrink(),
           ],

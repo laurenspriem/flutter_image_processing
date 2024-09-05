@@ -1,6 +1,6 @@
 import "dart:async";
 import "dart:developer" show log;
-import "dart:math" show max;
+import "dart:math" show max, min;
 import "dart:typed_data" show Float32List, Uint8List, ByteData;
 import "dart:ui";
 
@@ -19,17 +19,18 @@ Future<Uint8List> _encodeImage(Image image) async {
   return encodedImage;
 }
 
-Future<Uint8List> _encodeData(Uint8List rawRgbData) async {
+Future<Uint8List> _encodeData(Uint8List rawRgbData, width, height) async {
   final ImageDescriptor descriptor = ImageDescriptor.raw(
     await ImmutableBuffer.fromUint8List(rawRgbData),
-    width: 256,
-    height: 256,
+    width: width,
+    height: height,
     pixelFormat: PixelFormat.rgba8888,
   );
   final Codec codec = await descriptor.instantiateCodec();
   final FrameInfo frameInfo = await codec.getNextFrame();
   final Image image = frameInfo.image;
-  final ByteData? pngBytes = await image.toByteData(format: ImageByteFormat.png);
+  final ByteData? pngBytes =
+      await image.toByteData(format: ImageByteFormat.png);
   return pngBytes!.buffer.asUint8List();
 }
 
@@ -66,7 +67,43 @@ Future<Uint8List> processDownscaleImage(Uint8List imageData) async {
   }
 
   // encode image
-  final encoded = await _encodeData(processedBytes);
+  final encoded =
+      await _encodeData(processedBytes, requiredWidth, requiredHeight);
+  return encoded;
+}
+
+Future<Uint8List> processGreenifyImage(Uint8List imageData) async {
+  // decode image
+  final (image, imgByteData) = await _decodeImage(imageData);
+
+  // process image
+  final int requiredWidth = image.width;
+  final int requiredHeight = image.height;
+  final int requiredSize = 4 * requiredWidth * requiredHeight;
+
+  final processedBytes = Uint8List(requiredSize);
+  int pixelIndex = 0;
+  for (var h = 0; h < requiredHeight; h++) {
+    for (var w = 0; w < requiredWidth; w++) {
+      final Color pixel = _readPixelColor(
+        // w,
+        // h,
+        image,
+        imgByteData,
+        w,
+        h,
+      );
+      processedBytes[pixelIndex] = pixel.red;
+      processedBytes[pixelIndex + 1] = min(pixel.green + 50, 255);
+      processedBytes[pixelIndex + 2] = pixel.blue;
+      processedBytes[pixelIndex + 3] = 255;
+      pixelIndex += 4;
+    }
+  }
+
+  // encode image
+  final encoded =
+      await _encodeData(processedBytes, requiredWidth, requiredHeight);
   return encoded;
 }
 
