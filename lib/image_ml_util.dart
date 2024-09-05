@@ -12,13 +12,6 @@ Future<(Image, ByteData)> _decodeImage(Uint8List imageData) async {
   return (image, imageByteData!);
 }
 
-Future<Uint8List> _encodeImage(Image image) async {
-  final ByteData? byteDataPng =
-      await image.toByteData(format: ImageByteFormat.png);
-  final encodedImage = byteDataPng!.buffer.asUint8List();
-  return encodedImage;
-}
-
 Future<Uint8List> _encodeData(Uint8List rawRgbData, width, height) async {
   final ImageDescriptor descriptor = ImageDescriptor.raw(
     await ImmutableBuffer.fromUint8List(rawRgbData),
