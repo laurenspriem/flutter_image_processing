@@ -55,8 +55,11 @@ List<List<double>> createGaussianKernel(int size, double sigma) {
 }
 
 Future<Uint8List> processDownscaleImage(Uint8List imageData) async {
+  final startTime = DateTime.now();
   // decode image
   final (image, imgByteData) = await _decodeImage(imageData);
+  final decodeTime = DateTime.now();
+  final decodeMs = decodeTime.difference(startTime).inMilliseconds;
 
   // process image
   const int requiredWidth = 256;
@@ -85,10 +88,16 @@ Future<Uint8List> processDownscaleImage(Uint8List imageData) async {
       pixelIndex += 4;
     }
   }
+  final processTime = DateTime.now();
+  final processMs = processTime.difference(decodeTime).inMilliseconds;
 
   // encode image
   final encoded =
       await _encodeData(processedBytes, requiredWidth, requiredHeight);
+  final encodeTime = DateTime.now();
+  final encodeMs = encodeTime.difference(processTime).inMilliseconds;
+  final totalMs = encodeTime.difference(startTime).inMilliseconds;
+  log("Time for regular downscale: total=$totalMs ms, process=$processMs ms, decode=$decodeMs ms, encode=$encodeMs ms");
   return encoded;
 }
 
@@ -170,8 +179,11 @@ Future<Uint8List> processBlurImage(Uint8List imageData, double sigma) async {
 
 Future<Uint8List> processDownscaleImageWithAntialias(
     Uint8List imageData, double sigma) async {
+  final startTime = DateTime.now();
   // decode image
   final (image, imgByteData) = await _decodeImage(imageData);
+  final decodeTime = DateTime.now();
+  final decodeMs = decodeTime.difference(startTime).inMilliseconds;
 
   // Create Gaussian kernel
   const int kernelSize = 5;
@@ -208,10 +220,17 @@ Future<Uint8List> processDownscaleImageWithAntialias(
       pixelIndex += 4;
     }
   }
+  final processTime = DateTime.now();
+  final processMs = processTime.difference(decodeTime).inMilliseconds;
 
   // encode image
   final encoded =
       await _encodeData(processedBytes, requiredWidth, requiredHeight);
+
+  final encodeTime = DateTime.now();
+  final encodeMs = encodeTime.difference(processTime).inMilliseconds;
+  final totalMs = encodeTime.difference(startTime).inMilliseconds;
+  log("Time for antialias downscale: total=$totalMs ms, process=$processMs ms, decode=$decodeMs ms, encode=$encodeMs ms");
   return encoded;
 }
 

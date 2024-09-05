@@ -77,7 +77,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _resizeImage() async {
+  Future<void> _downscaleImage() async {
     if (imageOriginalData == null) return;
 
     imageProcessedData = await processDownscaleImage(imageOriginalData!);
@@ -99,7 +99,7 @@ class _HomePageState extends State<HomePage> {
     if (imageOriginalData == null) return;
 
     imageProcessedData =
-        await processDownscaleImageWithAntialias(imageOriginalData!, 200.0);
+        await processDownscaleImageWithAntialias(imageOriginalData!, 200);
     setState(() {
       imageProcessed = Image.memory(imageProcessedData!);
     });
@@ -201,7 +201,7 @@ class _HomePageState extends State<HomePage> {
               label: imageProcessed != null
                   ? const Text('Back to original')
                   : const Text('Downscale image'),
-              onPressed: imageProcessed != null ? _cleanResult : _resizeImage,
+              onPressed: imageProcessed != null ? _cleanResult : _downscaleImage,
             ),
             imageProcessed == null
                 ? ElevatedButton.icon(
