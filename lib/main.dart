@@ -105,6 +105,16 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _downscaleWithBlurImageFaster() async {
+    if (imageOriginalData == null) return;
+
+    imageProcessedData =
+        await processDownscaleImageWithAntialiasFaster(imageOriginalData!, 200);
+    setState(() {
+      imageProcessed = Image.memory(imageProcessedData!);
+    });
+  }
+
   void _cleanResult() {
     setState(() {
       imageProcessed = null;
@@ -201,7 +211,8 @@ class _HomePageState extends State<HomePage> {
               label: imageProcessed != null
                   ? const Text('Back to original')
                   : const Text('Downscale image'),
-              onPressed: imageProcessed != null ? _cleanResult : _downscaleImage,
+              onPressed:
+                  imageProcessed != null ? _cleanResult : _downscaleImage,
             ),
             imageProcessed == null
                 ? ElevatedButton.icon(
@@ -215,6 +226,13 @@ class _HomePageState extends State<HomePage> {
                     icon: const Icon(Icons.image_sharp),
                     label: const Text('Downscale antialias'),
                     onPressed: _downscaleWithBlurImage,
+                  )
+                : const SizedBox.shrink(),
+            imageProcessed == null
+                ? ElevatedButton.icon(
+                    icon: const Icon(Icons.image_sharp),
+                    label: const Text('Antialias faster'),
+                    onPressed: _downscaleWithBlurImageFaster,
                   )
                 : const SizedBox.shrink(),
           ],
