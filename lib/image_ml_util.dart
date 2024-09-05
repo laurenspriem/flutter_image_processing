@@ -1,10 +1,13 @@
 import "dart:async";
 import "dart:developer" show log;
-import "dart:math" show exp, max, min, pi;
+import "dart:math" show exp, max, pi;
 import "dart:typed_data" show Float32List, Uint8List, ByteData;
 import "dart:ui";
 
 import 'package:flutter/painting.dart' as paint show decodeImageFromList;
+
+/// These are 8 bit unsigned integers in range 0-255
+typedef RGB = (int, int, int);
 
 Future<(Image, ByteData)> _decodeImage(Uint8List imageData) async {
   final Image image = await paint.decodeImageFromList(imageData);
@@ -59,27 +62,6 @@ List<List<double>> create2DGaussianKernel(int size, double sigma) {
 
   return kernel;
 }
-
-// List<double> create1DGaussianKernel(int size, double sigma) {
-//   final List<double> kernel = List<double>.filled(size, 0);
-//   double sum = 0.0;
-//   final int center = size ~/ 2;
-
-//   for (int x = 0; x < size; x++) {
-//     final int dx = x - center;
-//     final double g = (1 / sqrt(2 * pi * sigma * sigma)) *
-//         exp(-(dx * dx) / (2 * sigma * sigma));
-//     kernel[x] = g;
-//     sum += g;
-//   }
-
-//   // Normalize the kernel
-//   for (int x = 0; x < size; x++) {
-//     kernel[x] /= sum;
-//   }
-
-//   return kernel;
-// }
 
 Future<Uint8List> processDownscaleImage(Uint8List imageData) async {
   final startTime = DateTime.now();
@@ -253,7 +235,7 @@ Future<Uint8List> processDownscaleImageWithAntialiasFaster(
   int pixelIndex = 0;
   for (var h = 0 + heightOffset; h < scaledHeight - heightOffset; h++) {
     for (var w = 0 + widthOffset; w < scaledWidth - widthOffset; w++) {
-      final Color pixel = _getPixelBilinearAntialiasFaster(
+      final RGB pixel = _getPixelBilinearAntialiasFaster(
         w / scale,
         h / scale,
         image,
@@ -262,9 +244,9 @@ Future<Uint8List> processDownscaleImageWithAntialiasFaster(
         kernelSize,
         kernelRadius,
       );
-      processedBytes[pixelIndex] = pixel.red;
-      processedBytes[pixelIndex + 1] = pixel.green;
-      processedBytes[pixelIndex + 2] = pixel.blue;
+      processedBytes[pixelIndex] = pixel.$1;
+      processedBytes[pixelIndex + 1] = pixel.$2;
+      processedBytes[pixelIndex + 2] = pixel.$3;
       processedBytes[pixelIndex + 3] = 255;
       pixelIndex += 4;
     }
@@ -434,7 +416,7 @@ Color _getPixelGaussianBlur(
   return Color.fromRGBO(r.round(), g.round(), b.round(), 1.0);
 }
 
-Color _getPixelBilinearAntialiasFaster(
+RGB _getPixelBilinearAntialiasFaster(
     num fx,
     num fy,
     Image image,
@@ -457,13 +439,13 @@ Color _getPixelBilinearAntialiasFaster(
   final dy1 = 1.0 - dy;
 
   // Get the original pixels
-  final Color pixel1 = _getPixelGaussianBlurFaster(
+  final RGB pixel1 = _getPixelGaussianBlurFaster(
       image, rgbaBytes, x0, y0, kernel, kernelSize, kernelRadius);
-  final Color pixel2 = _getPixelGaussianBlurFaster(
+  final RGB pixel2 = _getPixelGaussianBlurFaster(
       image, rgbaBytes, x1, y0, kernel, kernelSize, kernelRadius);
-  final Color pixel3 = _getPixelGaussianBlurFaster(
+  final RGB pixel3 = _getPixelGaussianBlurFaster(
       image, rgbaBytes, x0, y1, kernel, kernelSize, kernelRadius);
-  final Color pixel4 = _getPixelGaussianBlurFaster(
+  final RGB pixel4 = _getPixelGaussianBlurFaster(
       image, rgbaBytes, x1, y1, kernel, kernelSize, kernelRadius);
 
   int bilinear(
@@ -476,15 +458,14 @@ Color _getPixelBilinearAntialiasFaster(
           .round();
 
   // Calculate the weighted sum of pixels
-  final int r = bilinear(pixel1.red, pixel2.red, pixel3.red, pixel4.red);
-  final int g =
-      bilinear(pixel1.green, pixel2.green, pixel3.green, pixel4.green);
-  final int b = bilinear(pixel1.blue, pixel2.blue, pixel3.blue, pixel4.blue);
+  final int r = bilinear(pixel1.$1, pixel2.$1, pixel3.$1, pixel4.$1);
+  final int g = bilinear(pixel1.$2, pixel2.$2, pixel3.$2, pixel4.$2);
+  final int b = bilinear(pixel1.$3, pixel2.$3, pixel3.$3, pixel4.$3);
 
-  return Color.fromRGBO(r, g, b, 1.0);
+  return (r, g, b);
 }
 
-Color _getPixelGaussianBlurFaster(
+RGB _getPixelGaussianBlurFaster(
   Image image,
   Uint8List rgbaBytes,
   int x,
@@ -499,8 +480,7 @@ Color _getPixelGaussianBlurFaster(
       final int px = (x - kernelRadius + kx);
       final int py = (y - kernelRadius + ky);
 
-      final (int, int, int) pixelRgbTuple =
-          _readPixelRgb(image, rgbaBytes, px, py);
+      final RGB pixelRgbTuple = _readPixelRgb(image, rgbaBytes, px, py);
       final double weight = kernel[ky][kx];
 
       r += pixelRgbTuple.$1 * weight;
@@ -508,7 +488,7 @@ Color _getPixelGaussianBlurFaster(
       b += pixelRgbTuple.$3 * weight;
     }
   }
-  return Color.fromRGBO(r.round(), g.round(), b.round(), 1.0);
+  return (r.round(), g.round(), b.round());
 }
 
 /// Reads the pixel color at the specified coordinates.
@@ -536,7 +516,7 @@ int _rgbaToArgb(int rgbaColor) {
   return rgb + (a << 24);
 }
 
-(int, int, int) _readPixelRgb(
+RGB _readPixelRgb(
   Image image,
   Uint8List rgbaBytes,
   int x,
