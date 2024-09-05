@@ -101,41 +101,6 @@ Future<Uint8List> processDownscaleImage(Uint8List imageData) async {
   return encoded;
 }
 
-Future<Uint8List> processGreenifyImage(Uint8List imageData) async {
-  // decode image
-  final (image, imgByteData) = await _decodeImage(imageData);
-
-  // process image
-  final int requiredWidth = image.width;
-  final int requiredHeight = image.height;
-  final int requiredSize = 4 * requiredWidth * requiredHeight;
-
-  final processedBytes = Uint8List(requiredSize);
-  int pixelIndex = 0;
-  for (var h = 0; h < requiredHeight; h++) {
-    for (var w = 0; w < requiredWidth; w++) {
-      final Color pixel = _readPixelColor(
-        // w,
-        // h,
-        image,
-        imgByteData,
-        w,
-        h,
-      );
-      processedBytes[pixelIndex] = pixel.red;
-      processedBytes[pixelIndex + 1] = min(pixel.green + 50, 255);
-      processedBytes[pixelIndex + 2] = pixel.blue;
-      processedBytes[pixelIndex + 3] = 255;
-      pixelIndex += 4;
-    }
-  }
-
-  // encode image
-  final encoded =
-      await _encodeData(processedBytes, requiredWidth, requiredHeight);
-  return encoded;
-}
-
 Future<Uint8List> processBlurImage(Uint8List imageData, double sigma) async {
   // decode image
   final (image, imgByteData) = await _decodeImage(imageData);
