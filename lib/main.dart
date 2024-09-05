@@ -86,10 +86,20 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _greenifyImage() async {
+  Future<void> _blurImage() async {
     if (imageOriginalData == null) return;
 
-    imageProcessedData = await processGreenifyImage(imageOriginalData!);
+    imageProcessedData = await processBlurImage(imageOriginalData!, 200.0);
+    setState(() {
+      imageProcessed = Image.memory(imageProcessedData!);
+    });
+  }
+
+  Future<void> _downscaleWithBlurImage() async {
+    if (imageOriginalData == null) return;
+
+    imageProcessedData =
+        await processDownscaleImageWithAntialias(imageOriginalData!, 200.0);
     setState(() {
       imageProcessed = Image.memory(imageProcessedData!);
     });
@@ -196,8 +206,15 @@ class _HomePageState extends State<HomePage> {
             imageProcessed == null
                 ? ElevatedButton.icon(
                     icon: const Icon(Icons.image_sharp),
-                    label: const Text('Greenify image'),
-                    onPressed: _greenifyImage,
+                    label: const Text('Blur image'),
+                    onPressed: _blurImage,
+                  )
+                : const SizedBox.shrink(),
+            imageProcessed == null
+                ? ElevatedButton.icon(
+                    icon: const Icon(Icons.image_sharp),
+                    label: const Text('Downscale antialias'),
+                    onPressed: _downscaleWithBlurImage,
                   )
                 : const SizedBox.shrink(),
           ],
